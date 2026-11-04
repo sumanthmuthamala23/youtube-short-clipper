@@ -5,9 +5,13 @@ from moviepy.editor import VideoFileClip
 import zipfile
 import glob
 
-st.set_page_config(page_title="Kids Short Creator Hub", page_icon="🎬", layout="centered")
+st.set_page_config(page_title="The DAAN Kids - Shorts Clipper", page_icon="🎬", layout="centered")
 
-st.title("🎬 Unlimited YouTube to Shorts Clipper")
+# Display Channel Logo Sticker
+if os.path.exists("logo.png"):
+    st.image("logo.png", width=220)
+
+st.title("🎬 The DAAN Kids - YouTube Shorts Clipper")
 st.write("Paste any children's trending YouTube video link below to slice it into multiple vertical YouTube Shorts instantly for free!")
 
 youtube_url = st.text_input("Paste YouTube Video URL:")
@@ -80,7 +84,7 @@ if st.button("Generate Shorts"):
                     st.download_button(
                         label="📦 Download All Shorts (.zip)",
                         data=fp,
-                        file_name="youtube_shorts.zip",
+                        file_name="the_daan_kids_shorts.zip",
                         mime="application/zip"
                     )
             else:
