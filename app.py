@@ -7,6 +7,7 @@ import glob
 
 st.set_page_config(page_title="The DAAN Kids - Shorts Clipper", page_icon="🎬", layout="centered")
 
+# Display Channel Logo Sticker if uploaded
 if os.path.exists("logo.png"):
     st.image("logo.png", width=220)
 
@@ -26,13 +27,15 @@ if st.button("Generate Shorts"):
                 if os.path.exists(f):
                     os.remove(f)
 
-            # Updated configuration using the embedded player client workaround
+            # yt-dlp configuration with cookie and client fallback support
             ydl_opts = {
                 'format': 'best/b',
                 'outtmpl': 'downloaded_video.mp4',
                 'noplaylist': True,
-                'extractor_args': {'youtube': {'player_client': ['web_embedded']}}
+                'cookiefile': 'cookies.txt' if os.path.exists('cookies.txt') else None,
+                'extractor_args': {'youtube': {'player_client': ['web_embedded', 'web']}}
             }
+            ydl_opts = {k: v for k, v in ydl_opts.items() if v is not None}
             
             try:
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -62,6 +65,7 @@ if st.button("Generate Shorts"):
                     end_time = start_time + duration_sec
                     subclip = clip.subclip(start_time, end_time)
                     
+                    # Crop to Vertical 9:16 for Shorts
                     w, h = subclip.size
                     if w > h:
                         new_w = int(h * (9 / 16))
