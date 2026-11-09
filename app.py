@@ -7,7 +7,6 @@ import glob
 
 st.set_page_config(page_title="The DAAN Kids - Shorts Clipper", page_icon="🎬", layout="centered")
 
-# Display Channel Logo Sticker
 if os.path.exists("logo.png"):
     st.image("logo.png", width=220)
 
@@ -31,7 +30,8 @@ if st.button("Generate Shorts"):
                 'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
                 'outtmpl': 'downloaded_video.mp4',
                 'noplaylist': True,
-                'merge_output_format': 'mp4'
+                'merge_output_format': 'mp4',
+                'extractor_args': {'youtube': {'player_client': ['android', 'web']}}
             }
             
             try:
