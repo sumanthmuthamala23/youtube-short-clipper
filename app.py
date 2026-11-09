@@ -26,8 +26,9 @@ if st.button("Generate Shorts"):
                 if os.path.exists(f):
                     os.remove(f)
 
+            # Flexible format fallback selector to prevent format availability errors
             ydl_opts = {
-                'format': 'best/b',
+                'format': 'bv*+ba/b',
                 'outtmpl': 'downloaded_video.mp4',
                 'noplaylist': True,
                 'cookiefile': 'cookies.txt' if os.path.exists('cookies.txt') else None,
@@ -39,7 +40,6 @@ if st.button("Generate Shorts"):
                 },
                 'extractor_args': {'youtube': {'player_client': ['android', 'web']}}
             }
-            ydl_opts = {k: v for k, v in ydl_opts.items() if v is not None}
             
             try:
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
