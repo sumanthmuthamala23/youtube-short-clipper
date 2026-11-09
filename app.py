@@ -26,12 +26,12 @@ if st.button("Generate Shorts"):
                 if os.path.exists(f):
                     os.remove(f)
 
-            # Updated configuration to bypass 403 errors by using flexible format selection
+            # Updated configuration using the embedded player client workaround
             ydl_opts = {
                 'format': 'best/b',
                 'outtmpl': 'downloaded_video.mp4',
                 'noplaylist': True,
-                'extractor_args': {'youtube': {'player_client': ['mweb', 'web']}}
+                'extractor_args': {'youtube': {'player_client': ['web_embedded']}}
             }
             
             try:
