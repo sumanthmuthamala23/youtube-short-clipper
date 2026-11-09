@@ -1,98 +1,110 @@
 import os
 import streamlit as st
-import yt_dlp
+from yt_dlp import YoutubeDL
 from moviepy.editor import VideoFileClip
-import zipfile
-import glob
 
-st.set_page_config(page_title="The DAAN Kids - Shorts Clipper", page_icon="🎬", layout="centered")
+# Page Configuration
+st.set_page_config(
+    page_title="The DAAN Kids - Shorts Clipper", page_icon="🎬", layout="centered"
+)
 
+# App Header
 if os.path.exists("logo.png"):
-    st.image("logo.png", width=220)
+  st.image("logo.png", width=120)
 
-st.title("🎬 The DAAN Kids - YouTube Shorts Clipper")
-st.write("Paste any children's trending YouTube video link below to slice it into multiple vertical YouTube Shorts instantly for free!")
+st.title("The DAAN Kids - Shorts Clipper")
+st.markdown(
+    "Paste any children's YouTube video link below to slice it into multiple"
+    " vertical YouTube Shorts instantly!"
+)
 
-youtube_url = st.text_input("Paste YouTube Video URL:")
-num_shorts = st.slider("Select number of shorts to generate:", min_value=3, max_value=10, value=5)
-duration_sec = st.slider("Duration of each short (seconds):", min_value=15, max_value=60, value=30)
+# User Inputs
+url = st.text_input("Paste YouTube Video URL:")
+num_shorts = st.slider("Select number of shorts to generate:", 1, 10, 5)
+clip_duration = st.slider(
+    "Duration of each short (seconds):", 10, 60, 30
+)  # standard 30s for kids shorts
 
 if st.button("Generate Shorts"):
-    if not youtube_url:
-        st.error("Please enter a valid YouTube URL.")
-    else:
-        with st.spinner("Downloading and processing video... Please wait."):
-            for f in glob.glob("output_*.mp4") + glob.glob("downloaded_video.mp4") + glob.glob("shorts.zip"):
-                if os.path.exists(f):
-                    os.remove(f)
+  if not url:
+    st.warning("Please enter a valid YouTube video URL.")
+  else:
+    with st.spinner("Downloading and processing video... Please wait."):
+      output_template = "downloaded_video.mp4"
 
-            # Flexible format fallback selector to prevent format availability errors
-            ydl_opts = {
-                'format': 'bv*+ba/b',
-                'outtmpl': 'downloaded_video.mp4',
-                'noplaylist': True,
-                'cookiefile': 'cookies.txt' if os.path.exists('cookies.txt') else None,
-                'http_headers': {
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-                    'Accept-Language': 'en-us,en;q=0.5',
-                    'Sec-Fetch-Mode': 'navigate',
-                },
-                'extractor_args': {'youtube': {'player_client': ['android', 'web']}}
-            }
-            
-            try:
-                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                    ydl.download([youtube_url])
-            except Exception as e:
-                st.error(f"Error downloading video: {e}")
-                st.stop()
+      # Clean up previous downloads if any
+      if os.path.exists(output_template):
+        os.remove(output_template)
 
-            downloaded_file = "downloaded_video.mp4"
-            if not os.path.exists(downloaded_file):
-                possible_files = glob.glob("downloaded_video.*")
-                if possible_files:
-                    downloaded_file = possible_files[0]
+      # yt-dlp configuration with cookies support
+      ydl_opts = {
+          "format": "bv*+ba/b",
+          "outtmpl": output_template,
+          "cookiefile": "cookies.txt" if os.path.exists("cookies.txt") else None,
+          "noplaylist": True,
+      }
 
-            if os.path.exists(downloaded_file):
-                clip = VideoFileClip(downloaded_file)
-                total_duration = int(clip.duration)
-                
-                generated_files = []
-                step = max(1, (total_duration - duration_sec) // max(1, num_shorts))
-                
-                for i in range(num_shorts):
-                    start_time = i * step
-                    if start_time + duration_sec > total_duration:
-                        start_time = max(0, total_duration - duration_sec)
-                    
-                    end_time = start_time + duration_sec
-                    subclip = clip.subclip(start_time, end_time)
-                    
-                    w, h = subclip.size
-                    if w > h:
-                        new_w = int(h * (9 / 16))
-                        x1 = (w - new_w) // 2
-                        subclip = subclip.crop(x1=x1, y1=0, x2=x1 + new_w, y2=h)
-                    
-                    output_filename = f"output_short_{i+1}.mp4"
-                    subclip.write_videofile(output_filename, codec="libx264", audio_codec="aac", fps=24, logger=None)
-                    generated_files.append(output_filename)
-                
-                clip.close()
+      try:
+        with YoutubeDL(ydl_opts) as ydl:
+          ydl.download([url])
 
-                with zipfile.ZipFile("shorts.zip", "w") as zipf:
-                    for file in generated_files:
-                        zipf.write(file)
+        if not os.path.exists(output_template):
+          st.error(
+              "Download failed. Please check the URL or your cookies file."
+          )
+        else:
+          # Process video clipping using moviepy
+          clip = VideoFileClip(output_template)
+          total_duration = clip.duration
 
-                st.success("🎉 Shorts generated successfully!")
-                
-                with open("shorts.zip", "rb") as fp:
-                    st.download_button(
-                        label="📦 Download All Shorts (.zip)",
-                        data=fp,
-                        file_name="the_daan_kids_shorts.zip",
-                        mime="application/zip"
-                    )
-            else:
-                st.error("Failed to download video file. Please check the URL.")
+          st.success(
+              f"Video downloaded successfully! Total duration:"
+              f" {int(total_duration)}s"
+          )
+
+          # Calculate start times evenly spaced
+          interval = max(
+              1, (total_duration - clip_duration) / max(1, num_shorts)
+          )
+
+          for i in range(num_shorts):
+            start_time = i * interval
+            end_time = min(start_time + clip_duration, total_duration)
+
+            if start_time >= total_duration:
+              break
+
+            subclip = clip.subclip(start_time, end_time)
+
+            # Crop to vertical 9:16 aspect ratio for Shorts/Reels
+            w, h = subclip.size
+            target_w = int(h * (9 / 16))
+            if target_w < w:
+              x1 = (w - target_w) / 2
+              subclip = subclip.crop(x1=x1, x2=x1 + target_w)
+
+            output_filename = f"short_{i+1}.mp4"
+            subclip.write_videofile(
+                output_filename,
+                codec="libx264",
+                audio_codec="aac",
+                preset="fast",
+                logger=None,
+            )
+
+            st.subheader(f"Short {i+1} ({int(start_time)}s - {int(end_time)}s)")
+            st.video(output_filename)
+
+            with open(output_filename, "rb") as file:
+              st.download_button(
+                  label=f"Download Short {i+1}",
+                  data=file,
+                  file_name=f"the_daan_kids_short_{i+1}.mp4",
+                  mime="video/mp4",
+                  key=f"download_{i}",
+              )
+
+          clip.close()
+
+      except Exception as e:
+        st.error(f"Error processing video: {e}")
