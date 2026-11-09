@@ -26,12 +26,12 @@ if st.button("Generate Shorts"):
                 if os.path.exists(f):
                     os.remove(f)
 
+            # Updated configuration to bypass 403 errors by using flexible format selection
             ydl_opts = {
-                'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
+                'format': 'best/b',
                 'outtmpl': 'downloaded_video.mp4',
                 'noplaylist': True,
-                'merge_output_format': 'mp4',
-                'extractor_args': {'youtube': {'player_client': ['android', 'web']}}
+                'extractor_args': {'youtube': {'player_client': ['mweb', 'web']}}
             }
             
             try:
