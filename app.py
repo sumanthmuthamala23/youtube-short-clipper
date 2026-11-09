@@ -14,13 +14,13 @@ if os.path.exists("logo.png"):
 
 st.title("The DAAN Kids - Shorts Clipper")
 st.markdown(
-    "Transform long children's videos into engaging vertical YouTube Shorts &"
-    " Reels instantly!"
+    "Transform children's videos into engaging vertical YouTube Shorts & Reels"
+    " instantly!"
 )
 
-# Input Mode Selection
+# Input Mode Selection: YouTube Link or File Upload
 input_mode = st.radio(
-    "Select Input Source:", ("YouTube Video URL", "Upload Video File")
+    "Select Input Source:", ("YouTube Video URL", "Upload/Attach Video File")
 )
 
 video_path = "processed_video.mp4"
@@ -48,6 +48,7 @@ if input_mode == "YouTube Video URL":
             "format": "best[ext=mp4]/best",
             "outtmpl": video_path,
             "cookiefile": "cookies.txt" if os.path.exists("cookies.txt") else None,
+            "extractor_args": {"youtube": {"player_client": ["android", "web"]}},
             "noplaylist": True,
         }
         try:
@@ -59,9 +60,13 @@ if input_mode == "YouTube Video URL":
 
 else:
   uploaded_file = st.file_uploader(
-      "Upload Video File (MP4, MOV, AVI)", type=["mp4", "mov", "avi"]
+      "Attach/Upload Video File (MP4, MOV, AVI)",
+      type=["mp4", "mov", "avi"],
+      key="video_upload",
   )
-  num_shorts = st.slider("Select number of shorts to generate:", 1, 10, 5, key="up_num")
+  num_shorts = st.slider(
+      "Select number of shorts to generate:", 1, 10, 5, key="up_num"
+  )
   clip_duration = st.slider(
       "Duration of each short (seconds):", 10, 60, 30, key="up_dur"
   )
@@ -70,17 +75,23 @@ else:
     with open(video_path, "wb") as f:
       f.write(uploaded_file.getbuffer())
     target_file = video_path
-    if st.button("Generate Shorts from Upload"):
-      pass  # triggers processing below
+
+  if st.button("Generate Shorts from Attached File"):
+    if uploaded_file is None:
+      st.warning("Please attach or upload a video file first.")
+    else:
+      target_file = video_path
 
 # Process Video and Slice Shorts
 if target_file and os.path.exists(target_file):
-  with st.spinner("Processing and slicing video clips..."):
+  with st.spinner("Processing and slicing video clips... Please wait."):
     try:
       clip = VideoFileClip(target_file)
       total_duration = clip.duration
 
-      st.success(f"Video loaded successfully! Total duration: {int(total_duration)}s")
+      st.success(
+          f"Video loaded successfully! Total duration: {int(total_duration)}s"
+      )
 
       interval = max(1, (total_duration - clip_duration) / max(1, num_shorts))
 
