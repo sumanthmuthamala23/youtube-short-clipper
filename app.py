@@ -28,12 +28,16 @@ if input_mode == "YouTube Video URL":
     if not url:
       st.warning("Please enter a valid YouTube video URL.")
     else:
-      with st.spinner("Downloading video..."):
+      with st.spinner("Downloading video with robust client bypass..."):
         ydl_opts = {
             "format": "best[ext=mp4]/best",
             "outtmpl": video_path,
             "cookiefile": "cookies.txt" if os.path.exists("cookies.txt") else None,
-            "extractor_args": {"youtube": {"player_client": ["android", "web"]}},
+            "extractor_args": {"youtube": {"player_client": ["ios", "android"]}},
+            "user_agent": (
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+                " (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            ),
             "noplaylist": True,
         }
         try:
@@ -78,7 +82,9 @@ if os.path.exists(video_path):
           "-i",
           video_path,
           "-vf",
-          "scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2",
+          (
+              "scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2"
+          ),
           "-f",
           "segment",
           "-segment_time",
