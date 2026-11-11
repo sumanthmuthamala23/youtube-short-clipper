@@ -16,15 +16,16 @@ st.markdown(
     "Transform long children's videos into multiple 9:16 vertical Shorts!"
 )
 
-input_mode = st.radio(
-    "Select Input Source:", ("YouTube Video URL", "Upload/Attach Video File")
-)
+# Side-by-side tabs for URL and File Upload
+tab1, tab2 = st.tabs(["🔗 YouTube Video URL", "📁 Upload Video File"])
 
 video_path = "source_video.mp4"
+target_ready = False
 
-if input_mode == "YouTube Video URL":
-  url = st.text_input("Paste YouTube Video URL:")
-  if st.button("Download & Process Video"):
+with tab1:
+  st.markdown("### Download from YouTube")
+  url = st.text_input("Paste YouTube Video URL:", key="yt_url_input")
+  if st.button("Download & Process URL", key="dl_btn"):
     if not url:
       st.warning("Please enter a valid YouTube video URL.")
     else:
@@ -44,32 +45,47 @@ if input_mode == "YouTube Video URL":
           with YoutubeDL(ydl_opts) as ydl:
             ydl.download([url])
           st.success("Video downloaded successfully!")
+          target_ready = True
         except Exception as e:
           st.error(
-              f"Download failed due to YouTube restriction (403): {e}. Please"
-              " use 'Upload/Attach Video File' instead!"
+              f"Download restricted by YouTube (403/Bot Check): {e}. Please"
+              " switch to the 'Upload Video File' tab to proceed instantly!"
           )
 
-else:
+with tab2:
+  st.markdown("### Upload from Device")
   uploaded_file = st.file_uploader(
-      "Upload Video File (MP4, MOV)", type=["mp4", "mov", "avi"]
+      "Choose a video file (MP4, MOV, AVI)",
+      type=["mp4", "mov", "avi"],
+      key="file_up",
   )
   if uploaded_file is not None:
     with open(video_path, "wb") as f:
       f.write(uploaded_file.getbuffer())
     st.success("Video uploaded successfully!")
+    target_ready = True
 
-if os.path.exists(video_path):
-  st.subheader("🎬 Generate Multiple Vertical Shorts (9:16)")
+# If a video is loaded via either method, show the clipper studio
+if os.path.exists(video_path) and (target_ready or os.path.getsize(video_path) > 0):
+  st.markdown("---")
+  st.subheader("🎬 Vertical 9:16 Shorts Studio")
 
-  clip_duration = st.slider(
-      "Duration per Short (seconds):", min_value=15, max_value=60, value=30, step=5
+  st.info(
+      "💡 **Best Practices for Kids Shorts:** 30 seconds is the sweet spot for"
+      " high engagement and viewer retention on YouTube Shorts & Instagram"
+      " Reels."
   )
 
-  if st.button("Split into Multiple Shorts"):
-    with st.spinner(
-        "Slicing video into vertical 9:16 shorts... Please wait."
-    ):
+  clip_duration = st.slider(
+      "Select Optimal Duration per Short (seconds):",
+      min_value=15,
+      max_value=60,
+      value=30,
+      step=5,
+  )
+
+  if st.button("🚀 Split into Multiple Shorts", key="split_btn"):
+    with st.spinner("Slicing video into vertical 9:16 shorts... Please wait."):
       output_pattern = "short_%03d.mp4"
       for f in os.listdir("."):
         if f.startswith("short_") and f.endswith(".mp4"):
@@ -109,7 +125,7 @@ if os.path.exists(video_path):
       [f for f in os.listdir(".") if f.startswith("short_") and f.endswith(".mp4")]
   )
   if shorts:
-    st.markdown("### 📥 Download Your Shorts")
+    st.markdown("### 📥 Download Your Generated Shorts")
     for idx, short_file in enumerate(shorts, 1):
       col1, col2 = st.columns([2, 1])
       with col1:
