@@ -1,5 +1,5 @@
 streamlit==1.32.0
 yt-dlp>=2023.12.30
-numpy>=1.22,<2.0
+numpy==1.26.4
 imageio-ffmpeg>=0.4.8
 moviepy==1.0.3
